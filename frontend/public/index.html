@@ -1,0 +1,3117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeighBridge Pro — Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111620;
+    --surface2: #161d2b;
+    --border: #1e2d42;
+    --accent: #00c8ff;
+    --accent2: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #4a5568;
+    --gross: #3b82f6;
+    --tare: #8b5cf6;
+    --net: #10b981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(90deg, #0a0e14, #0d1829, #0a0e14);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), #0070ff);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--accent), #fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .status-badge.connected { border-color: var(--green); color: var(--green); }
+  .status-badge.disconnected { border-color: var(--red); color: var(--red); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .header-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* NAV TABS */
+  .nav {
+    display: flex;
+    gap: 2px;
+    padding: 12px 24px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .nav-tab {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN CONTENT */
+  .main { padding: 20px 24px; }
+
+  /* WEIGHING PANEL */
+  .weigh-panel {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* BILL CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* BILL INFO GRID */
+  .bill-info {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .field-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: border-color 0.2s;
+    width: 100%;
+    outline: none;
+  }
+
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.1);
+  }
+
+  .field-input.highlight {
+    color: var(--accent2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .field-value {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--accent2);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* CAMERAS */
+  .cameras {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .camera-feed {
+    position: relative;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    border: 1px solid var(--border);
+  }
+
+  .camera-feed img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .camera-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px;
+    pointer-events: none;
+  }
+
+  .camera-label {
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(0,200,255,0.2);
+    align-self: flex-start;
+  }
+
+  .camera-timestamp {
+    background: rgba(0,0,0,0.6);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: #fff;
+    align-self: flex-end;
+  }
+
+  .camera-no-signal {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0a0e14, #0d1829);
+    gap: 8px;
+    color: var(--text3);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .camera-no-signal .icon { font-size: 28px; opacity: 0.3; }
+
+  .camera-upload-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: var(--text2);
+    font-size: 10px;
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.2s;
+  }
+  .camera-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* WEIGHT DISPLAY PANEL */
+  .weight-panel { padding: 16px; }
+
+  .live-weight-display {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .live-weight-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,200,255,0.03) 0%, transparent 50%);
+  }
+
+  .live-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .live-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 48px;
+    font-weight: 400;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,200,255,0.4);
+    line-height: 1;
+    letter-spacing: -2px;
+    transition: all 0.3s;
+  }
+
+  .live-unit {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .stability-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .stability-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.5s, background 0.3s;
+    border-radius: 2px;
+  }
+
+  .stability-label {
+    font-size: 10px;
+    text-align: center;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    color: var(--text3);
+  }
+
+  /* WEIGHT BOXES */
+  .weight-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .weight-box {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .weight-box.gross { border-color: var(--gross); }
+  .weight-box.tare { border-color: var(--tare); }
+  .weight-box.net { border-color: var(--net); background: rgba(16,185,129,0.05); }
+
+  .weight-box-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .weight-box.gross .weight-box-label { color: var(--gross); }
+  .weight-box.tare .weight-box-label { color: var(--tare); }
+  .weight-box.net .weight-box-label { color: var(--net); }
+
+  .weight-box-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    font-weight: 400;
+  }
+  .weight-box.gross .weight-box-value { color: var(--gross); }
+  .weight-box.tare .weight-box-value { color: var(--tare); }
+  .weight-box.net .weight-box-value { color: var(--net); font-size: 26px; }
+
+  .weight-box-time {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .weight-box-kg {
+    font-size: 11px;
+    color: var(--text3);
+    align-self: flex-end;
+    margin-bottom: 2px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 13px;
+    padding: 12px;
+  }
+  .btn-primary:hover { background: #33d4ff; box-shadow: 0 0 16px rgba(0,200,255,0.3); }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--tare);
+    color: var(--tare);
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 13px;
+    padding: 12px;
+  }
+  .btn-secondary:hover { background: rgba(139,92,246,0.1); }
+
+  .btn-success {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+    width: 100%;
+    font-size: 13px;
+    padding: 12px;
+  }
+  .btn-success:hover { background: #34d399; box-shadow: 0 0 16px rgba(16,185,129,0.3); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--red);
+    color: var(--red);
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+  .btn-new {
+    background: rgba(245,158,11,0.1);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+  .btn-new:hover { background: rgba(245,158,11,0.2); }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* RECORDS TABLE */
+  .records-section { margin-top: 16px; }
+
+  .records-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 16px;
+  }
+
+  .search-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 13px;
+    flex: 1;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  .records-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .records-table th {
+    background: var(--surface2);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .records-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid rgba(30,45,66,0.5);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .records-table tr:hover td {
+    background: rgba(0,200,255,0.03);
+    cursor: pointer;
+  }
+
+  .records-table tr.active-row td {
+    background: rgba(0,200,255,0.06);
+    border-left: 2px solid var(--accent);
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pill-pending { background: rgba(245,158,11,0.15); color: var(--accent2); border: 1px solid rgba(245,158,11,0.3); }
+  .pill-gross { background: rgba(59,130,246,0.15); color: var(--gross); border: 1px solid rgba(59,130,246,0.3); }
+  .pill-completed { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+  .vehicle-no {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent2);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .weight-cell { font-family: 'Share Tech Mono', monospace; font-size: 13px; }
+  .gross-cell { color: var(--gross); }
+  .tare-cell { color: var(--tare); }
+  .net-cell { color: var(--net); font-weight: 600; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    opacity: 0.06;
+    transform: translate(20px, -20px);
+  }
+
+  .stat-card:nth-child(1)::after { background: var(--accent); }
+  .stat-card:nth-child(2)::after { background: var(--accent2); }
+  .stat-card:nth-child(3)::after { background: var(--green); }
+  .stat-card:nth-child(4)::after { background: var(--gross); }
+
+  .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-family: 'Share Tech Mono', monospace; font-size: 28px; }
+  .stat-card:nth-child(1) .stat-value { color: var(--accent); }
+  .stat-card:nth-child(2) .stat-value { color: var(--accent2); }
+  .stat-card:nth-child(3) .stat-value { color: var(--green); }
+  .stat-card:nth-child(4) .stat-value { color: var(--gross); }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* BILL NUMBER */
+  .bill-no-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 28px;
+    color: var(--accent2);
+    text-align: center;
+    letter-spacing: 2px;
+    padding: 8px;
+  }
+
+  /* ALERT / TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast-msg {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 320px;
+    animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.6s forwards;
+    pointer-events: all;
+  }
+
+  .toast-msg.success { border-color: var(--green); color: var(--green); }
+  .toast-msg.error { border-color: var(--red); color: var(--red); }
+  .toast-msg.info { border-color: var(--accent); color: var(--accent); }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; transform: translateX(100%); }
+  }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 700px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform 0.2s;
+  }
+  .modal-bg.open .modal { transform: scale(1); }
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+
+  .modal-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .modal-body { padding: 20px; }
+
+  /* Print bill */
+  .print-bill {
+    background: #fff;
+    color: #000;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .print-bill table { width: 100%; border-collapse: collapse; }
+  .print-bill td, .print-bill th { padding: 6px 10px; border: 1px solid #ccc; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .weigh-panel { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .bill-info { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── SIMULATION badge ── */
+  .status-badge.simulation {
+    border-color: #f59e0b;
+    color: #f59e0b;
+  }
+  .status-badge.simulation .status-dot { background: #f59e0b; }
+
+  /* ── AUTOCOMPLETE ── */
+  .autocomplete-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .autocomplete-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0; right: 0;
+    background: #0d1520;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    display: none;
+  }
+  .autocomplete-list.open { display: block; }
+  .autocomplete-item {
+    padding: 9px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background: rgba(0,200,255,0.1);
+    color: var(--accent);
+  }
+  .autocomplete-item .ac-sub {
+    font-size: 10px;
+    color: var(--text3);
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── MASTER TAB ── */
+  .master-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .master-list {
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .master-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30,45,66,0.5);
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .master-row:hover { background: rgba(0,200,255,0.03); }
+  .master-row .mr-name {
+    flex: 1;
+    font-weight: 600;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+  .master-row .mr-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .master-row .mr-del {
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--red);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .master-row .mr-del:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+  .master-empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--text3);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* ── MASTER EDIT MODAL ── */
+  .master-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+  .master-modal-overlay.open { display: flex; }
+  .master-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 420px;
+    max-width: 95vw;
+    padding: 24px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  }
+  .master-modal h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 18px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .master-modal .field-group { margin-bottom: 12px; }
+  .master-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .mr-edit {
+    background: transparent;
+    border: 1px solid rgba(0,200,255,0.3);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 9px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mr-edit:hover { background: rgba(0,200,255,0.1); border-color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .page-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .date-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 13px;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .port-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    padding: 4px;
+  }
+
+  /* Animate weight change */
+  .weight-changed {
+    animation: flash 0.3s ease;
+  }
+  @keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-icon">⚖</div>
+    <div>
+      <div class="logo-text">WeighBridge Pro</div>
+      <div class="logo-sub">Industrial Weighing System</div>
+    </div>
+  </div>
+  <div class="header-status">
+    <div id="wsStatus" class="status-badge disconnected">
+      <div class="status-dot"></div>
+      <span>Serial: Offline</span>
+    </div>
+    <div id="dbStatus" class="status-badge disconnected">
+      <div class="status-dot"></div>
+      <span>DB: Offline</span>
+    </div>
+    <div class="header-time" id="headerTime">--:--:--</div>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav">
+  <button class="nav-tab active" onclick="switchTab('weighing')">⚖ Weighing</button>
+  <button class="nav-tab" onclick="switchTab('records')">📋 Records</button>
+  <button class="nav-tab" onclick="switchTab('master')">🗂 Master</button>
+  <button class="nav-tab" onclick="switchTab('printer')">🖨 Printer</button>
+  <button class="nav-tab" onclick="switchTab('settings')">⚙ Settings</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- WEIGHING TAB -->
+  <div class="tab-content active" id="tab-weighing">
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Bills</div>
+        <div class="stat-value" id="statTotal">--</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-value" id="statToday">--</div>
+        <div class="stat-sub">Bills today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value" id="statCompleted">--</div>
+        <div class="stat-sub">Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Net Weight</div>
+        <div class="stat-value" id="statWeight">--</div>
+        <div class="stat-sub">Tons today</div>
+      </div>
+    </div>
+
+    <div class="weigh-panel">
+      <!-- LEFT: Bill Form + Cameras -->
+      <div>
+        <!-- Bill Info Card -->
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-header">
+            <span class="card-title">Bill Information</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span style="font-family:'Share Tech Mono';font-size:13px;color:var(--accent2)">Bill #<span id="currentBillNo">NEW</span></span>
+              <button class="btn btn-new" onclick="newBill()">+ New Bill</button>
+            </div>
+          </div>
+          <div class="bill-info">
+            <div class="field-group">
+              <span class="field-label">Date & Time</span>
+              <div class="field-value" id="billDateTime" style="font-size:12px;">--</div>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Vehicle No. *</span>
+              <div class="autocomplete-wrap">
+                <input class="field-input highlight" id="vehicleNo" type="text" placeholder="TN32AQ2399" style="text-transform:uppercase;" autocomplete="off" oninput="onVehicleNoChange(this.value)" onfocus="acVehicle(this.value)" onblur="setTimeout(()=>closeAC('acVehicleList'),200)" />
+                <div class="autocomplete-list" id="acVehicleList"></div>
+              </div>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Charges</span>
+              <input class="field-input" id="charges" type="number" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="field-group">
+              <span class="field-label">Material *</span>
+              <div class="autocomplete-wrap">
+                <input class="field-input" id="material" type="text" placeholder="MSAND, GRAVEL..." style="text-transform:uppercase;" autocomplete="off" oninput="acMaterial(this.value)" onfocus="acMaterial(this.value)" onblur="setTimeout(()=>closeAC('acMaterialList'),200)" />
+                <div class="autocomplete-list" id="acMaterialList"></div>
+              </div>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Customer *</span>
+              <input class="field-input" id="customer" type="text" placeholder="Customer name" />
+            </div>
+            <div class="field-group">
+              <span class="field-label">Remarks</span>
+              <input class="field-input" id="remarks" type="text" placeholder="Optional..." />
+            </div>
+          </div>
+
+          <!-- Weight Summary Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border);">
+            <div style="padding:14px 16px;border-right:1px solid var(--border);text-align:center;background:rgba(59,130,246,0.05)">
+              <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gross);margin-bottom:4px;">Gross Weight</div>
+              <div style="font-family:'Share Tech Mono';font-size:22px;color:var(--gross)" id="displayGross">-- Kg</div>
+              <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono'" id="displayGrossTime">--</div>
+            </div>
+            <div style="padding:14px 16px;border-right:1px solid var(--border);text-align:center;background:rgba(139,92,246,0.05)">
+              <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tare);margin-bottom:4px;">Tare Weight</div>
+              <div style="font-family:'Share Tech Mono';font-size:22px;color:var(--tare)" id="displayTare">-- Kg</div>
+              <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono'" id="displayTareTime">--</div>
+            </div>
+            <div style="padding:14px 16px;text-align:center;background:rgba(16,185,129,0.05)">
+              <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--net);margin-bottom:4px;">Net Weight</div>
+              <div style="font-family:'Share Tech Mono';font-size:26px;color:var(--net);font-weight:600" id="displayNet">-- Kg</div>
+              <div style="font-size:10px;color:var(--text3)">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Camera Feeds</span>
+            <button class="btn btn-new" onclick="refreshCameras()" style="font-size:10px;padding:6px 10px;">↻ Refresh</button>
+          </div>
+          <div class="cameras">
+            <!-- Camera 1 -->
+            <div class="camera-feed" id="cam1Container">
+              <div class="camera-no-signal" id="cam1NoSignal">
+                <div class="icon">📷</div>
+                <div>CAMERA 1 — NO SIGNAL</div>
+                <div style="font-size:10px;opacity:0.6">Configure IP in Settings</div>
+              </div>
+              <img id="cam1Img" style="display:none;" src="" alt="Camera 1" />
+              <div class="camera-overlay">
+                <span class="camera-label">CAM-01</span>
+                <span class="camera-timestamp" id="cam1Time">--</span>
+              </div>
+              <label class="camera-upload-btn" title="Upload snapshot">
+                📁 Upload
+                <input type="file" accept="image/*" style="display:none;" onchange="uploadCamImage(event, 1)" />
+              </label>
+            </div>
+            <!-- Camera 2 -->
+            <div class="camera-feed" id="cam2Container">
+              <div class="camera-no-signal" id="cam2NoSignal">
+                <div class="icon">📷</div>
+                <div>CAMERA 2 — NO SIGNAL</div>
+                <div style="font-size:10px;opacity:0.6">Configure IP in Settings</div>
+              </div>
+              <img id="cam2Img" style="display:none;" src="" alt="Camera 2" />
+              <div class="camera-overlay">
+                <span class="camera-label">CAM-02</span>
+                <span class="camera-timestamp" id="cam2Time">--</span>
+              </div>
+              <label class="camera-upload-btn" title="Upload snapshot">
+                📁 Upload
+                <input type="file" accept="image/*" style="display:none;" onchange="uploadCamImage(event, 2)" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live Weight + Actions -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Live Weight</span>
+            <span class="port-status" id="portPath">Simulation Mode</span>
+          </div>
+          <div class="weight-panel">
+            <!-- Live display -->
+            <div class="live-weight-display">
+              <div class="live-label">Current Reading</div>
+              <div class="live-value" id="liveWeight">00000</div>
+              <div class="live-unit">Kilograms</div>
+              <div class="stability-bar">
+                <div class="stability-fill" id="stabilityFill" style="width:0%"></div>
+              </div>
+              <div class="stability-label" id="stabilityLabel">WAITING FOR SIGNAL</div>
+            </div>
+
+            <!-- Manual override -->
+            <div style="margin-bottom:12px;">
+              <div class="field-label" style="margin-bottom:4px;">Manual Weight Override (Kg)</div>
+              <div style="display:flex;gap:6px;">
+                <input class="field-input" id="manualWeight" type="number" placeholder="Enter weight manually" style="flex:1;" />
+                <button class="btn" style="border-color:var(--accent2);color:var(--accent2);padding:8px 12px;font-size:11px;" onclick="applyManual()">SET</button>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <button class="btn btn-primary" id="btnGross" onclick="captureGross()">
+              ⚖ Capture Gross Weight
+            </button>
+            <button class="btn btn-secondary" id="btnTare" onclick="captureTare()" disabled>
+              ⚖ Capture Tare Weight
+            </button>
+            <button class="btn btn-success" id="btnComplete" onclick="completeBill()" disabled title="Fill Vehicle No, Material, Customer and capture Gross Weight to enable">
+              ✓ Save & Complete Bill
+            </button>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;" />
+
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-danger" id="btnDelete" onclick="deleteBill()" disabled style="flex:1;">🗑 Delete</button>
+              <button class="btn" style="border-color:var(--accent);color:var(--accent);flex:1;font-size:11px;padding:8px;" onclick="printBill()" id="btnPrint" disabled>🖨 Print</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORDS TAB -->
+  <div class="tab-content" id="tab-records">
+    <div class="page-header-bar">
+      <span class="page-title">Weigh Records</span>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="date" class="date-input" id="filterDate" onchange="loadRecords()" />
+        <button class="btn btn-new" onclick="exportCSV()">↓ Export CSV</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="records-toolbar">
+        <input class="search-input" placeholder="Search vehicle, customer, material..." id="searchInput" oninput="loadRecords()" />
+        <button class="btn btn-new" onclick="loadRecords()">↻ Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Bill No.</th>
+              <th>Date & Time</th>
+              <th>Vehicle No.</th>
+              <th>Material</th>
+              <th>Customer</th>
+              <th>Gross (Kg)</th>
+              <th>Tare (Kg)</th>
+              <th>Net (Kg)</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody">
+            <tr><td colspan="10" class="empty-state">Loading records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--text3);" id="recordCount">0 records</span>
+        <div style="display:flex;gap:6px;" id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASTER TAB -->
+  <div class="tab-content" id="tab-master">
+    <div class="page-header-bar">
+      <span class="page-title">Master Data</span>
+    </div>
+    <div class="master-grid">
+
+      <!-- ── MATERIALS ── -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📦 Materials</span>
+          <span style="font-size:11px;color:var(--text3)" id="matCount">0 items</span>
+        </div>
+
+        <!-- Add form -->
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div class="field-group" style="flex:2;min-width:130px;">
+            <span class="field-label">Material Name</span>
+            <input class="field-input" id="newMatName" placeholder="e.g. MSAND" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')addMaterial()" />
+          </div>
+          <div class="field-group" style="flex:1;min-width:80px;">
+            <span class="field-label">Unit</span>
+            <select class="field-input" id="newMatUnit">
+              <option>Kg</option>
+              <option>Ton</option>
+              <option>Litre</option>
+              <option>Nos</option>
+              <option>Bag</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="addMaterial()" style="margin-bottom:0;width:auto;padding:9px 18px;">+ Add</button>
+        </div>
+
+        <!-- List -->
+        <div class="master-list" id="materialList">
+          <div class="master-empty">Loading...</div>
+        </div>
+      </div>
+
+      <!-- ── VEHICLES ── -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🚛 Vehicles</span>
+          <span style="font-size:11px;color:var(--text3)" id="vehCount">0 vehicles</span>
+        </div>
+
+        <!-- Add form -->
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div class="field-group">
+              <span class="field-label">Vehicle No. *</span>
+              <input class="field-input" id="newVehNo" placeholder="TN32AQ2399" style="text-transform:uppercase;" onkeydown="if(event.key==='Enter')addVehicle()" />
+            </div>
+            <div class="field-group">
+              <span class="field-label">Vehicle Type</span>
+              <select class="field-input" id="newVehType">
+                <option value="">— Select —</option>
+                <option>Tipper</option>
+                <option>Lorry</option>
+                <option>Tractor</option>
+                <option>Mini Lorry</option>
+                <option>Container</option>
+                <option>Tanker</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <span class="field-label">Driver Name</span>
+              <input class="field-input" id="newVehDriver" placeholder="Driver full name" />
+            </div>
+            <div class="field-group">
+              <span class="field-label">Contact Number</span>
+              <input class="field-input" id="newVehContact" placeholder="+91 XXXXX XXXXX" type="tel" />
+            </div>
+            <div class="field-group" style="grid-column:span 2;">
+              <span class="field-label">Owner Name</span>
+              <input class="field-input" id="newVehOwner" placeholder="Vehicle owner name" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="addVehicle()" style="width:100%;margin-bottom:0;">+ Add Vehicle</button>
+        </div>
+
+        <!-- Search -->
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);">
+          <input class="search-input" id="vehSearch" placeholder="Search vehicle no..." oninput="loadVehicles()" style="width:100%;" />
+        </div>
+
+        <!-- List -->
+        <div class="master-list" id="vehicleList">
+          <div class="master-empty">Loading...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PRINTER TAB -->
+  <div class="tab-content" id="tab-printer">
+    <div class="page-header-bar">
+      <span class="page-title">Printer Management</span>
+      <button class="btn btn-new" onclick="refreshPrinterStatus()">↻ Refresh Status</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+      <!-- Printer Config -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Printer Configuration</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+
+          <div class="field-group">
+            <span class="field-label">Printer Type</span>
+            <select class="field-input" id="printerType" onchange="onPrinterTypeChange()">
+              <option value="html">Browser Print (window.print — recommended)</option>
+              <option value="local">Local / USB Printer (server-side)</option>
+              <option value="ip">IP / Network Printer (RAW port 9100)</option>
+              <option value="pdf">PDF via wkhtmltopdf → local printer</option>
+            </select>
+          </div>
+
+          <!-- LOCAL options -->
+          <div id="localOptions">
+            <div class="field-group">
+              <span class="field-label">Local Printer Name</span>
+              <div style="display:flex;gap:6px;">
+                <select class="field-input" id="localPrinterName" style="flex:1;">
+                  <option value="">— System Default —</option>
+                </select>
+                <button class="btn btn-new" onclick="loadLocalPrinters()" style="white-space:nowrap;">Scan</button>
+              </div>
+              <span style="font-size:10px;color:var(--text3);margin-top:3px;">Click "Scan" to list printers detected by the server OS</span>
+            </div>
+          </div>
+
+          <!-- IP options -->
+          <div id="ipOptions" style="display:none;">
+            <div class="field-group" style="margin-bottom:10px;">
+              <span class="field-label">Printer IP Address</span>
+              <input class="field-input" id="printerIP" placeholder="192.168.1.200" />
+            </div>
+            <div class="field-group" style="margin-bottom:10px;">
+              <span class="field-label">RAW Port (default 9100)</span>
+              <input class="field-input" id="printerPort" value="9100" type="number" />
+            </div>
+            <button class="btn btn-new" onclick="testIPPrinter()" style="width:100%;">📡 Test Connection</button>
+            <div id="ipTestResult" style="font-size:12px;font-family:'Share Tech Mono';margin-top:8px;padding:6px;background:var(--bg);border-radius:4px;border:1px solid var(--border);display:none;"></div>
+          </div>
+
+          <div class="field-group">
+            <span class="field-label">Copies</span>
+            <input class="field-input" id="printCopies" type="number" value="1" min="1" max="10" style="width:80px;" />
+          </div>
+
+          <button class="btn btn-success" onclick="savePrinterSettings()">💾 Save Printer Settings</button>
+        </div>
+      </div>
+
+      <!-- Printer Status -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Server Printer Status</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+          <div id="printerStatusBox" style="font-family:'Share Tech Mono';font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;line-height:1.8;color:var(--text2);">
+            Loading...
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.6;">
+            <b style="color:var(--accent2);">Browser Print</b> — opens receipt in a new tab/window and calls window.print(). Requires no server config. Best for most setups.<br/><br/>
+            <b style="color:var(--accent2);">Local Printer</b> — server sends to OS print queue using lp/lpr (Linux/macOS) or PowerShell (Windows). Printer must be installed on server machine.<br/><br/>
+            <b style="color:var(--accent2);">IP Printer</b> — server connects directly to printer IP:9100 (RAW/JetDirect). Best for network printers (HP, Epson, Zebra, etc.).<br/><br/>
+            <b style="color:var(--accent2);">PDF Engine</b> — install <code>wkhtmltopdf</code> for server-side PDF generation.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Company / Receipt Settings -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><span class="card-title">Receipt / Company Details</span></div>
+      <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="field-group">
+          <span class="field-label">Company Name</span>
+          <input class="field-input" id="rcptCompany" value="SRI VENKADESWARA WEIGH BRIDGE" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Address Line 1</span>
+          <input class="field-input" id="rcptAddr1" value="CHENNAI-THIRUVANAMALAI BYEPASS ROAD" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Address Line 2</span>
+          <input class="field-input" id="rcptAddr2" value="NEAR BY SANDHAI MEDU . THINDIVANAM - 604 001" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Phone</span>
+          <input class="field-input" id="rcptPhone" value="Ph : 9994706523 . 9543389898" />
+        </div>
+        <div class="field-group" style="grid-column:span 2;">
+          <span class="field-label">Logo URL or Base64 (optional)</span>
+          <input class="field-input" id="rcptLogo" placeholder="https://... or leave blank" />
+        </div>
+        <div style="grid-column:span 3;">
+          <button class="btn btn-success" onclick="saveReceiptSettings()" style="width:200px;">💾 Save Receipt Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Print -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Test Print</span></div>
+      <div style="padding:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="field-group" style="flex:1;min-width:200px;">
+          <span class="field-label">Bill No. or ID to Test Print</span>
+          <input class="field-input" id="testPrintBill" placeholder="Enter Bill # or leave blank for last bill" />
+        </div>
+        <button class="btn btn-primary" onclick="doTestPrint()" style="width:180px;margin-bottom:0;">🖨 Test Print Bill</button>
+        <button class="btn btn-new" onclick="previewLastBill()" style="margin-bottom:0;">👁 Preview Receipt</button>
+      </div>
+      <div id="testPrintResult" style="padding:0 16px 12px;font-size:12px;font-family:'Share Tech Mono';display:none;"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div class="tab-content" id="tab-settings">
+    <div class="page-header-bar">
+      <span class="page-title">System Settings</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Serial Port -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔌 Serial Port (Weighbridge)</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div class="field-group">
+            <span class="field-label">Port Path</span>
+            <input class="field-input" id="settingPort" placeholder="/dev/ttyUSB0 or COM3" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Baud Rate</span>
+            <select class="field-input" id="settingBaud">
+              <option>1200</option><option>2400</option><option>4800</option>
+              <option selected>9600</option><option>14400</option><option>19200</option>
+              <option>38400</option><option>57600</option><option>115200</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <span class="field-label">Data Format</span>
+            <select class="field-input" id="settingFormat">
+              <option value="auto">Auto Detect</option>
+              <option value="plain">Plain Number</option>
+              <option value="st">ST,GS,+XXXXXX (Stable/Gross)</option>
+              <option value="plus">+XXXXXX Kg</option>
+            </select>
+          </div>
+          <div style="font-size:11px;color:var(--text3);background:var(--bg);padding:8px;border-radius:6px;border:1px solid var(--border);">
+            💡 Saves to .env and reconnects immediately — no server restart needed.
+          </div>
+          <button class="btn btn-primary" onclick="saveSerialSettings()">💾 Save & Reconnect</button>
+        </div>
+      </div>
+
+      <!-- Cameras -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">📷 IP Cameras</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div class="field-group">
+            <span class="field-label">Camera 1 Snapshot URL</span>
+            <input class="field-input" id="settingCam1" placeholder="http://192.168.1.100/snapshot.jpg" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Camera 2 Snapshot URL</span>
+            <input class="field-input" id="settingCam2" placeholder="http://192.168.1.101/snapshot.jpg" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Camera Username (both cameras)</span>
+            <input class="field-input" id="settingCamUser" placeholder="admin" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Camera Password (both cameras)</span>
+            <input class="field-input" id="settingCamPass" type="password" placeholder="Leave blank to keep existing" />
+          </div>
+          <div style="font-size:11px;color:var(--text3);background:var(--bg);padding:8px;border-radius:6px;border:1px solid var(--border);">
+            💡 Saves to .env and applies immediately — next capture uses new URLs.
+          </div>
+          <button class="btn btn-primary" onclick="saveCameraSettings()">💾 Save Camera Settings</button>
+        </div>
+      </div>
+
+      <!-- Company Info -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">🏢 Company / Print Settings</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div class="field-group">
+            <span class="field-label">Company Name</span>
+            <input class="field-input" id="settingCompany" placeholder="SRI VENKADESWARA WEIGH BRIDGE" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Address Line 1</span>
+            <input class="field-input" id="settingAddress" placeholder="Street / Road" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Address Line 2</span>
+            <input class="field-input" id="settingAddress2" placeholder="City / Pincode" />
+          </div>
+          <div class="field-group">
+            <span class="field-label">Phone</span>
+            <input class="field-input" id="settingPhone" placeholder="Ph: 99999 99999" />
+          </div>
+          <div style="font-size:11px;color:var(--text3);background:var(--bg);padding:8px;border-radius:6px;border:1px solid var(--border);">
+            💡 Saves to .env — applied on every new print immediately.
+          </div>
+          <button class="btn btn-primary" onclick="saveCompanySettings()">💾 Save Company Settings</button>
+        </div>
+      </div>
+
+      <!-- MongoDB -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">🗄 Database (MongoDB)</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div class="field-group">
+            <span class="field-label">MongoDB URI</span>
+            <input class="field-input" id="settingMongo" placeholder="mongodb://localhost:27017/weighbridge" />
+          </div>
+          <div id="dbHealthInfo" style="font-size:12px;color:var(--text3);font-family:'Share Tech Mono';padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border);">
+            Status: Checking...
+          </div>
+          <button class="btn btn-primary" onclick="checkHealth()">🔍 Test Connection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast Container -->
+<div class="toast" id="toastContainer"></div>
+
+<!-- Print Modal -->
+<div class="modal-bg" id="printModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Print Bill</span>
+      <button class="modal-close" onclick="closeModal('printModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="printContent"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-danger" onclick="closeModal('printModal')" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api';
+let ws = null;
+let currentBill = null;
+let liveWeightVal = 0;
+let stableWeightVal = 0;
+let stabilityPercent = 0;
+let currentPage = 1;
+let settings = JSON.parse(localStorage.getItem('wb_settings') || '{}');
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 1000);
+  connectWebSocket();
+  loadStats();
+  setInterval(loadStats, 30000);
+  loadSettings();
+  newBill();
+  preloadMasterData(); // load materials + vehicles for autocomplete
+
+  // Wire up form inputs to re-check button states on every keystroke
+  ['vehicleNo','material','customer','charges','manualWeight'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', checkFormReady);
+      el.addEventListener('change', checkFormReady);
+    }
+  });
+
+  // Periodic check to catch weight changes from serial port
+  setInterval(checkFormReady, 1000);
+});
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('headerTime').textContent = now.toLocaleString('en-IN', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+  });
+  if (currentBill && currentBill._id === 'new') {
+    document.getElementById('billDateTime').textContent = now.toLocaleString('en-IN');
+  }
+}
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+function connectWebSocket() {
+  const wsUrl = `ws://${window.location.host}`;
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    // Initial state shown as connecting — will update on first message
+    setSerialStatus('connecting');
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'weight') {
+        // Update serial status badge based on simulation flag
+        setSerialStatus(data.simulation ? 'simulation' : 'live');
+        updateLiveWeight(data.weight, data.stable, data.stableWeight);
+      } else if (data.type === 'status') {
+        if (!data.connected || data.simulation) {
+          setSerialStatus('simulation');
+        } else {
+          setSerialStatus('live');
+        }
+      }
+    } catch (e) {}
+  };
+
+  ws.onclose = () => {
+    setSerialStatus('offline');
+    setTimeout(connectWebSocket, 3000);
+  };
+
+  ws.onerror = () => {
+    setSerialStatus('offline');
+  };
+}
+
+function setSerialStatus(state) {
+  const el = document.getElementById('wsStatus');
+  if (!el) return;
+  if (state === 'live') {
+    el.className = 'status-badge connected';
+    el.innerHTML = '<div class="status-dot"></div><span>Serial: LIVE</span>';
+    el.style.color = '';
+  } else if (state === 'simulation') {
+    el.className = 'status-badge simulation';
+    el.innerHTML = '<div class="status-dot"></div><span style="color:#f59e0b;font-weight:700;">Serial: SIMULATION</span>';
+  } else if (state === 'connecting') {
+    el.className = 'status-badge disconnected';
+    el.innerHTML = '<div class="status-dot"></div><span>Serial: Connecting...</span>';
+  } else {
+    el.className = 'status-badge disconnected';
+    el.innerHTML = '<div class="status-dot"></div><span style="color:var(--red);">Serial: OFFLINE</span>';
+  }
+}
+
+function updateLiveWeight(weight, stable, stableWeight) {
+  liveWeightVal   = weight;
+  stableWeightVal = stableWeight || weight;
+
+  const el        = document.getElementById('liveWeight');
+  const formatted = Math.round(weight).toString().padStart(5, '0');
+  if (formatted !== el.textContent) {
+    el.classList.add('weight-changed');
+    setTimeout(() => el.classList.remove('weight-changed'), 300);
+  }
+  el.textContent = formatted;
+
+  // Stability bar
+  stabilityPercent = stable ? 100 : Math.min(stabilityPercent + 20, 90);
+  const fill = document.getElementById('stabilityFill');
+  fill.style.width      = stabilityPercent + '%';
+  fill.style.background = stable ? 'var(--green)' : 'var(--accent2)';
+  document.getElementById('stabilityLabel').textContent = stable
+    ? '✓ STABLE — READY TO CAPTURE'
+    : '⟳ STABILIZING...';
+
+  // Re-check button states when weight changes
+  checkFormReady();
+}
+
+// ============================================================
+// BILL MANAGEMENT
+// ============================================================
+
+// Cached manual camera images (base64) set when user uploads manually
+let manualCam1 = null;
+let manualCam2 = null;
+
+function newBill() {
+  currentBill   = { _id: 'new', status: 'pending' };
+  manualCam1    = null;
+  manualCam2    = null;
+  document.getElementById('currentBillNo').textContent = 'NEW';
+  document.getElementById('vehicleNo').value  = '';
+  document.getElementById('material').value   = '';
+  document.getElementById('customer').value   = '';
+  document.getElementById('charges').value    = '';
+  const rem = document.getElementById('remarks');
+  if (rem) rem.value = '';
+  document.getElementById('billDateTime').textContent     = new Date().toLocaleString('en-IN');
+  document.getElementById('displayGross').textContent     = '-- Kg';
+  document.getElementById('displayTare').textContent      = '-- Kg';
+  document.getElementById('displayNet').textContent       = '-- Kg';
+  document.getElementById('displayGrossTime').textContent = '--';
+  document.getElementById('displayTareTime').textContent  = '--';
+  document.getElementById('cam1Img').style.display        = 'none';
+  document.getElementById('cam1NoSignal').style.display   = 'flex';
+  document.getElementById('cam2Img').style.display        = 'none';
+  document.getElementById('cam2NoSignal').style.display   = 'flex';
+  checkFormReady();
+}
+
+// ── Re-evaluate button states based on what is actually filled in
+function checkFormReady() {
+  const vehicleNo = document.getElementById('vehicleNo').value.trim();
+  const material  = document.getElementById('material').value.trim();
+  const customer  = document.getElementById('customer').value.trim();
+  const grossTxt  = document.getElementById('displayGross').textContent;
+  const tareTxt   = document.getElementById('displayTare').textContent;
+
+  // Weight: manual override field > stable serial > live serial
+  const manualW  = parseFloat(document.getElementById('manualWeight').value) || 0;
+  const effectiveW = manualW > 0 ? manualW : (stableWeightVal > 0 ? stableWeightVal : liveWeightVal);
+
+  const hasFields  = !!(vehicleNo && material && customer);
+  const hasGross   = grossTxt && grossTxt !== '-- Kg';
+  const hasWeight  = effectiveW > 0;
+  const isExisting = !!(currentBill && currentBill._id !== 'new');
+
+  // ── Gross: need all 3 fields + a weight value
+  const btnG = document.getElementById('btnGross');
+  if (btnG) btnG.disabled = !(hasFields && hasWeight);
+
+  // ── Tare: need gross already captured + a weight value
+  const btnT = document.getElementById('btnTare');
+  if (btnT) btnT.disabled = !(hasGross && hasWeight);
+
+  // ── Save: need all 3 fields + gross weight captured — that's it
+  const btnC = document.getElementById('btnComplete');
+  if (btnC) {
+    btnC.disabled = !(hasFields && hasGross);
+    btnC.title = btnC.disabled
+      ? (!hasFields ? 'Fill Vehicle No, Material & Customer' : 'Capture Gross Weight first')
+      : 'Ready to save!';
+    // Visual cue: green glow when ready
+    btnC.style.opacity     = btnC.disabled ? '0.4' : '1';
+    btnC.style.cursor      = btnC.disabled ? 'not-allowed' : 'pointer';
+    btnC.style.boxShadow   = (!btnC.disabled) ? '0 0 16px rgba(16,185,129,0.5)' : '';
+  }
+
+  // ── Print: needs saved bill + gross captured
+  const btnP = document.getElementById('btnPrint');
+  if (btnP) btnP.disabled = !(isExisting && hasGross);
+
+  // ── Delete: needs saved bill in DB
+  const btnD = document.getElementById('btnDelete');
+  if (btnD) btnD.disabled = !isExisting;
+
+  // ── Red border hint on empty required fields (only after user has interacted)
+  ['vehicleNo','material','customer'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const empty = !el.value.trim();
+    el.style.borderColor = empty ? 'rgba(239,68,68,0.5)' : '';
+    el.style.boxShadow   = empty ? '0 0 0 1px rgba(239,68,68,0.2)' : '';
+  });
+}
+
+async function createBillIfNew() {
+  if (!currentBill || currentBill._id !== 'new') return currentBill;
+
+  const vehicleNo = document.getElementById('vehicleNo').value.trim();
+  const material  = document.getElementById('material').value.trim();
+  const customer  = document.getElementById('customer').value.trim();
+  const charges   = document.getElementById('charges').value;
+
+  if (!vehicleNo || !material || !customer) {
+    showToast('Please fill Vehicle No., Material, and Customer', 'error');
+    ['vehicleNo','material','customer'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) {
+        el.style.borderColor = 'var(--red)';
+        el.style.boxShadow   = '0 0 0 2px rgba(239,68,68,0.25)';
+        el.focus();
+        setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 3000);
+      }
+    });
+    return null;
+  }
+
+  try {
+    showToast('Creating bill...', 'info');
+    const res = await fetch(`${API}/bills`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleNo, material, customer, charges })
+    });
+    const bill = await res.json();
+    if (!res.ok) throw new Error(bill.error || JSON.stringify(bill));
+    currentBill = bill;
+    document.getElementById('currentBillNo').textContent = bill.billNo;
+    document.getElementById('billDateTime').textContent  = new Date(bill.dateTime).toLocaleString('en-IN');
+    checkFormReady();
+    showToast(`Bill #${bill.billNo} created`, 'success');
+    return bill;
+  } catch (err) {
+    showToast(`Create bill failed: ${err.message}`, 'error');
+    return null;
+  }
+}
+
+async function captureGross() {
+  // Validate weight first
+  const manualW   = parseFloat(document.getElementById('manualWeight').value) || 0;
+  const effectiveW = manualW > 0 ? manualW : (stableWeightVal > 0 ? stableWeightVal : liveWeightVal);
+
+  if (!effectiveW || effectiveW <= 0) {
+    showToast('No weight reading — enter a value in the Manual Weight Override field', 'error');
+    document.getElementById('manualWeight').focus();
+    document.getElementById('manualWeight').style.borderColor = 'var(--red)';
+    setTimeout(() => { document.getElementById('manualWeight').style.borderColor = ''; }, 3000);
+    return;
+  }
+
+  // Create bill record in DB if not yet created
+  const bill = await createBillIfNew();
+  if (!bill) return;
+
+  try {
+    showToast('Capturing gross weight...', 'info');
+    const payload = {
+      weight: effectiveW,
+      // Pass any manually uploaded images so server stores them
+      camera1Image: manualCam1 || undefined,
+      camera2Image: manualCam2 || undefined
+    };
+
+    const res = await fetch(`${API}/bills/${bill._id}/gross-weight`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const updated = await res.json();
+    if (!res.ok) throw new Error(updated.error || JSON.stringify(updated));
+
+    currentBill = updated;
+    document.getElementById('displayGross').textContent     = `${updated.grossWeight.value.toLocaleString()} Kg`;
+    document.getElementById('displayGrossTime').textContent = new Date(updated.grossWeight.timestamp).toLocaleTimeString('en-IN');
+    showCamImages(updated);
+    checkFormReady();
+    showToast(`✓ Gross weight: ${updated.grossWeight.value.toLocaleString()} Kg captured`, 'success');
+  } catch (err) {
+    showToast(`Capture failed: ${err.message}`, 'error');
+  }
+}
+
+async function captureTare() {
+  if (!currentBill || currentBill._id === 'new') {
+    showToast('Please capture Gross Weight first', 'error');
+    return;
+  }
+
+  const manualW    = parseFloat(document.getElementById('manualWeight').value) || 0;
+  const effectiveW = manualW > 0 ? manualW : (stableWeightVal > 0 ? stableWeightVal : liveWeightVal);
+
+  if (!effectiveW || effectiveW <= 0) {
+    showToast('No weight reading — enter a value in the Manual Weight Override field', 'error');
+    document.getElementById('manualWeight').focus();
+    return;
+  }
+
+  try {
+    showToast('Capturing tare weight...', 'info');
+    const res = await fetch(`${API}/bills/${currentBill._id}/tare-weight`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight: effectiveW })
+    });
+    const updated = await res.json();
+    if (!res.ok) throw new Error(updated.error || JSON.stringify(updated));
+
+    currentBill = updated;
+
+    const grossVal = updated.grossWeight && updated.grossWeight.value;
+    const tareVal  = updated.tareWeight  && updated.tareWeight.value;
+
+    // Client-side net weight calculation as safety fallback
+    const netVal = (updated.netWeight != null)
+      ? updated.netWeight
+      : (grossVal != null && tareVal != null ? parseFloat(grossVal) - parseFloat(tareVal) : null);
+
+    document.getElementById('displayTare').textContent     = `${Number(tareVal).toLocaleString()} Kg`;
+    document.getElementById('displayTareTime').textContent = new Date(updated.tareWeight.timestamp).toLocaleTimeString('en-IN');
+    document.getElementById('displayNet').textContent      = netVal != null
+      ? `${Number(netVal).toLocaleString()} Kg`
+      : '-- Kg';
+
+    checkFormReady();
+    showToast(
+      `✓ Tare: ${Number(tareVal).toLocaleString()} Kg  |  Net: ${netVal != null ? Number(netVal).toLocaleString() : '?'} Kg`,
+      'success'
+    );
+  } catch (err) {
+    showToast(`Capture failed: ${err.message}`, 'error');
+  }
+}
+
+async function completeBill() {
+  const vehicleNo = document.getElementById('vehicleNo').value.trim();
+  const material  = document.getElementById('material').value.trim();
+  const customer  = document.getElementById('customer').value.trim();
+  const grossTxt  = document.getElementById('displayGross').textContent;
+
+  if (!vehicleNo || !material || !customer) {
+    showToast('Please fill Vehicle No., Material, and Customer', 'error');
+    checkFormReady();
+    return;
+  }
+  if (!grossTxt || grossTxt === '-- Kg') {
+    showToast('Please capture Gross Weight before saving', 'error');
+    return;
+  }
+
+  // Create bill if it hasn't been saved yet
+  if (!currentBill || currentBill._id === 'new') {
+    const bill = await createBillIfNew();
+    if (!bill) return;
+  }
+
+  try {
+    // Update fields + mark completed
+    const patchRes = await fetch(`${API}/bills/${currentBill._id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vehicleNo: vehicleNo.toUpperCase(),
+        material,
+        customer,
+        charges: parseFloat(document.getElementById('charges').value) || 0,
+        status: (currentBill.netWeight != null) ? 'completed' : currentBill.status
+      })
+    });
+    if (!patchRes.ok) {
+      const e = await patchRes.json();
+      throw new Error(e.error);
+    }
+    const saved = await patchRes.json();
+    currentBill = saved;
+
+    document.getElementById('btnPrint').disabled = false;
+    checkFormReady();
+    showToast(`✅ Bill #${currentBill.billNo} saved successfully!`, 'success');
+    loadStats();
+
+    setTimeout(() => {
+      if (confirm(`Bill #${currentBill.billNo} saved!\n\nStart a new bill?`)) newBill();
+    }, 400);
+  } catch (err) {
+    showToast(`Save failed: ${err.message}`, 'error');
+  }
+}
+
+async function deleteBill() {
+  if (!currentBill || currentBill._id === 'new') return;
+  if (!confirm(`Delete Bill #${currentBill.billNo}?`)) return;
+
+  try {
+    await fetch(`${API}/bills/${currentBill._id}`, { method: 'DELETE' });
+    showToast('Bill deleted', 'info');
+    loadStats();
+    newBill();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function applyManual() {
+  const val = document.getElementById('manualWeight').value;
+  if (val) {
+    updateLiveWeight(parseFloat(val), true, parseFloat(val));
+    showToast(`Manual weight set: ${val} Kg`, 'info');
+  }
+}
+
+// ============================================================
+// CAMERAS
+// ============================================================
+function showCamImages(bill) {
+  if (bill.camera1Image) {
+    document.getElementById('cam1Img').src = bill.camera1Image;
+    document.getElementById('cam1Img').style.display = 'block';
+    document.getElementById('cam1NoSignal').style.display = 'none';
+    document.getElementById('cam1Time').textContent = new Date().toLocaleString('en-IN');
+  }
+  if (bill.camera2Image) {
+    document.getElementById('cam2Img').src = bill.camera2Image;
+    document.getElementById('cam2Img').style.display = 'block';
+    document.getElementById('cam2NoSignal').style.display = 'none';
+    document.getElementById('cam2Time').textContent = new Date().toLocaleString('en-IN');
+  }
+}
+
+async function refreshCameras() {
+  if (!currentBill || currentBill._id === 'new') {
+    showToast('Create or load a bill first', 'info');
+    return;
+  }
+  showToast('Refreshing cameras...', 'info');
+  // Trigger a re-capture by hitting the API
+  const res = await fetch(`${API}/bills/${currentBill._id}/gross-weight`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ weight: liveWeightVal })
+  });
+  if (res.ok) {
+    const updated = await res.json();
+    showCamImages(updated);
+  }
+}
+
+function uploadCamImage(event, camNum) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const imgEl      = document.getElementById(`cam${camNum}Img`);
+    const noSignalEl = document.getElementById(`cam${camNum}NoSignal`);
+    imgEl.src              = e.target.result;
+    imgEl.style.display    = 'block';
+    noSignalEl.style.display = 'none';
+    document.getElementById(`cam${camNum}Time`).textContent = new Date().toLocaleString('en-IN');
+
+    // Store for use when capturing gross weight
+    if (camNum === 1) manualCam1 = e.target.result;
+    if (camNum === 2) manualCam2 = e.target.result;
+
+    // If bill already saved in DB, persist image immediately
+    if (currentBill && currentBill._id !== 'new') {
+      const key = `camera${camNum}Image`;
+      fetch(`${API}/bills/${currentBill._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: e.target.result })
+      }).then(() => showToast(`Camera ${camNum} image saved`, 'success'))
+        .catch(() => showToast(`Camera ${camNum} image stored locally`, 'info'));
+    } else {
+      showToast(`Camera ${camNum} image ready — will be saved with Gross Weight capture`, 'info');
+    }
+
+    checkFormReady();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============================================================
+// RECORDS
+// ============================================================
+async function loadRecords() {
+  const search = document.getElementById('searchInput')?.value || '';
+  const date = document.getElementById('filterDate')?.value || '';
+
+  try {
+    const res = await fetch(`${API}/bills?page=${currentPage}&limit=20&search=${search}&date=${date}`);
+    const data = await res.json();
+    const tbody = document.getElementById('recordsBody');
+
+    if (!data.bills?.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No records found</td></tr>';
+      document.getElementById('recordCount').textContent = '0 records';
+      return;
+    }
+
+    tbody.innerHTML = data.bills.map(b => `
+      <tr onclick="loadBillToForm('${b._id}')">
+        <td style="font-family:'Share Tech Mono';color:var(--accent2)">#${b.billNo}</td>
+        <td style="font-size:11px;color:var(--text2)">${new Date(b.dateTime).toLocaleString('en-IN')}</td>
+        <td class="vehicle-no">${b.vehicleNo}</td>
+        <td style="text-transform:uppercase;">${b.material}</td>
+        <td>${b.customer}</td>
+        <td class="weight-cell gross-cell">${b.grossWeight?.value ? b.grossWeight.value.toLocaleString() : '--'}</td>
+        <td class="weight-cell tare-cell">${b.tareWeight?.value ? b.tareWeight.value.toLocaleString() : '--'}</td>
+        <td class="weight-cell net-cell">${b.netWeight ? b.netWeight.toLocaleString() : '--'}</td>
+        <td><span class="pill pill-${b.status === 'completed' ? 'completed' : b.status === 'gross_weighed' ? 'gross' : 'pending'}">${b.status}</span></td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn" style="border-color:var(--accent);color:var(--accent);font-size:10px;padding:4px 8px;" onclick="event.stopPropagation();viewBillPrint('${b._id}')">🖨</button>
+            <button class="btn btn-danger" onclick="event.stopPropagation();deleteRecord('${b._id}')">✕</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('recordCount').textContent = `${data.total} records`;
+    renderPagination(data.totalPages);
+    updateDBStatus(true);
+  } catch (err) {
+    document.getElementById('recordsBody').innerHTML = `<tr><td colspan="10" class="empty-state">Error: ${err.message}. Is the backend running?</td></tr>`;
+    updateDBStatus(false);
+  }
+}
+
+function renderPagination(totalPages) {
+  const el = document.getElementById('pagination');
+  el.innerHTML = '';
+  for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.cssText = `font-size:11px;padding:6px 10px;border-color:${i===currentPage?'var(--accent)':'var(--border)'};color:${i===currentPage?'var(--accent)':'var(--text2)'}`;
+    btn.textContent = i;
+    btn.onclick = () => { currentPage = i; loadRecords(); };
+    el.appendChild(btn);
+  }
+}
+
+async function loadBillToForm(id) {
+  try {
+    const res = await fetch(`${API}/bills/${id}`);
+    const bill = await res.json();
+    currentBill = bill;
+    switchTab('weighing');
+    document.getElementById('currentBillNo').textContent = bill.billNo;
+    document.getElementById('vehicleNo').value = bill.vehicleNo;
+    document.getElementById('material').value = bill.material;
+    document.getElementById('customer').value = bill.customer;
+    document.getElementById('charges').value = bill.charges;
+    document.getElementById('billDateTime').textContent = new Date(bill.dateTime).toLocaleString('en-IN');
+
+    if (bill.grossWeight?.value) {
+      document.getElementById('displayGross').textContent = `${bill.grossWeight.value.toLocaleString()} Kg`;
+      document.getElementById('displayGrossTime').textContent = new Date(bill.grossWeight.timestamp).toLocaleTimeString('en-IN');
+    }
+    if (bill.tareWeight?.value) {
+      document.getElementById('displayTare').textContent = `${bill.tareWeight.value.toLocaleString()} Kg`;
+      document.getElementById('displayTareTime').textContent = new Date(bill.tareWeight.timestamp).toLocaleTimeString('en-IN');
+    }
+    if (bill.netWeight) document.getElementById('displayNet').textContent = `${bill.netWeight.toLocaleString()} Kg`;
+
+    document.getElementById('btnDelete').disabled = false;
+    document.getElementById('btnPrint').disabled = bill.status !== 'completed' && !bill.grossWeight?.value;
+    document.getElementById('btnGross').disabled = !!bill.grossWeight?.value;
+    document.getElementById('btnTare').disabled = !bill.grossWeight?.value;
+    document.getElementById('btnComplete').disabled = !bill.grossWeight?.value;
+    checkFormReady();
+
+    showCamImages(bill);
+    showToast(`Loaded Bill #${bill.billNo}`, 'info');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteRecord(id) {
+  if (!confirm('Delete this record?')) return;
+  await fetch(`${API}/bills/${id}`, { method: 'DELETE' });
+  loadRecords();
+  loadStats();
+  showToast('Record deleted', 'info');
+}
+
+function exportCSV() {
+  fetch(`${API}/bills?limit=10000`)
+    .then(r => r.json())
+    .then(data => {
+      const rows = [
+        ['Bill No', 'Date Time', 'Vehicle No', 'Material', 'Customer', 'Gross Weight', 'Tare Weight', 'Net Weight', 'Charges', 'Status'],
+        ...data.bills.map(b => [
+          b.billNo, new Date(b.dateTime).toLocaleString(), b.vehicleNo, b.material, b.customer,
+          b.grossWeight?.value || '', b.tareWeight?.value || '', b.netWeight || '',
+          b.charges, b.status
+        ])
+      ];
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `weighbridge_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    });
+}
+
+// ============================================================
+// PRINT / PRINTER
+// ============================================================
+
+// Get company settings from printer tab inputs
+function getCompanyPayload() {
+  return {
+    companyName:  document.getElementById('rcptCompany')?.value || settings.rcptCompany || '',
+    companyAddr1: document.getElementById('rcptAddr1')?.value   || settings.rcptAddr1   || '',
+    companyAddr2: document.getElementById('rcptAddr2')?.value   || settings.rcptAddr2   || '',
+    companyPhone: document.getElementById('rcptPhone')?.value   || settings.rcptPhone   || '',
+    companyLogo:  document.getElementById('rcptLogo')?.value    || settings.rcptLogo    || ''
+  };
+}
+
+function getPrinterPayload() {
+  const type = document.getElementById('printerType')?.value || settings.printerType || 'html';
+  return {
+    printerType: type,
+    printerName: document.getElementById('localPrinterName')?.value || settings.printerName || '',
+    ipHost:      document.getElementById('printerIP')?.value        || settings.printerIP   || '',
+    ipPort:      document.getElementById('printerPort')?.value      || settings.printerPort || '9100',
+    copies:      document.getElementById('printCopies')?.value      || settings.printCopies || '1',
+    ...getCompanyPayload()
+  };
+}
+
+// Main print function called from bill form
+async function printBill() {
+  const bill = currentBill;
+  if (!bill || bill._id === 'new') { showToast('No bill loaded to print', 'error'); return; }
+  await doPrint(bill._id);
+}
+
+async function doPrint(billId) {
+  const printerType = document.getElementById('printerType')?.value || settings.printerType || 'html';
+
+  if (printerType === 'html') {
+    // Browser popup print — fast, no server dependency
+    await browserPrintBill(billId);
+  } else {
+    // Server-side print
+    await serverPrintBill(billId);
+  }
+}
+
+// Open receipt HTML in new window and call window.print()
+async function browserPrintBill(billId) {
+  try {
+    const res = await fetch(`${API}/printer/print-html/${billId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getCompanyPayload())
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    const win = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+    win.document.write(data.html);
+    win.document.close();
+    showToast('Receipt opened in print window', 'success');
+  } catch (err) {
+    // Fallback: use preview route
+    const url = `${API}/printer/preview/${billId}`;
+    window.open(url, '_blank', 'width=900,height=700');
+    showToast('Preview opened', 'info');
+  }
+}
+
+// Send to server → OS or IP printer
+async function serverPrintBill(billId) {
+  const payload = getPrinterPayload();
+  showToast('Sending to printer...', 'info');
+  try {
+    const res = await fetch(`${API}/printer/print/${billId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✓ Printed Bill #${data.billNo} via ${data.method || payload.printerType}`, 'success');
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (err) {
+    showToast(`Print failed: ${err.message}`, 'error');
+    // Offer browser fallback
+    if (confirm('Server print failed. Open browser print window instead?')) {
+      await browserPrintBill(billId);
+    }
+  }
+}
+
+// Preview in new tab (no print dialog)
+async function previewBill(billId) {
+  const bid = billId || (currentBill?._id !== 'new' ? currentBill._id : null);
+  if (!bid) { showToast('No bill loaded', 'error'); return; }
+  window.open(`${API}/printer/preview/${bid}`, '_blank', 'width=900,height=700');
+}
+
+// Records table print button
+async function viewBillPrint(id) {
+  await doPrint(id);
+}
+
+// ── PRINTER TAB FUNCTIONS ──
+async function loadLocalPrinters() {
+  try {
+    const res = await fetch(`${API}/printer/printers`);
+    const data = await res.json();
+    const sel = document.getElementById('localPrinterName');
+    sel.innerHTML = '<option value="">— System Default —</option>';
+    (data.printers || []).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = `${p.name} (${p.status || 'available'})`;
+      sel.appendChild(opt);
+    });
+    if (data.printers?.length) showToast(`Found ${data.printers.length} printer(s)`, 'success');
+    else showToast('No printers found via server', 'info');
+  } catch (err) {
+    showToast('Could not reach server to list printers', 'error');
+  }
+}
+
+async function testIPPrinter() {
+  const host = document.getElementById('printerIP').value.trim();
+  const port = parseInt(document.getElementById('printerPort').value) || 9100;
+  if (!host) { showToast('Enter printer IP first', 'error'); return; }
+
+  const resEl = document.getElementById('ipTestResult');
+  resEl.style.display = 'block';
+  resEl.textContent = `Testing ${host}:${port} ...`;
+  resEl.style.color = 'var(--text2)';
+
+  try {
+    const res = await fetch(`${API}/printer/test-ip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, port })
+    });
+    const data = await res.json();
+    if (data.reachable) {
+      resEl.textContent = `✓ ONLINE — ${host}:${port} is reachable`;
+      resEl.style.color = 'var(--green)';
+      showToast(`Printer at ${host}:${port} is online`, 'success');
+    } else {
+      resEl.textContent = `✗ UNREACHABLE — ${data.error || 'Connection refused'}`;
+      resEl.style.color = 'var(--red)';
+    }
+  } catch (err) {
+    resEl.textContent = `Error: ${err.message}`;
+    resEl.style.color = 'var(--red)';
+  }
+}
+
+async function refreshPrinterStatus() {
+  const box = document.getElementById('printerStatusBox');
+  if (!box) return;
+  try {
+    const res = await fetch(`${API}/printer/status`);
+    const d = await res.json();
+    box.innerHTML = `
+Default Type  : <span style="color:var(--accent)">${d.defaultType}</span>
+Local Printer : <span style="color:var(--accent2)">${d.localPrinter}</span>
+IP Printer    : <span style="color:var(--accent2)">${d.ipHost}:${d.ipPort}</span>
+Paper Width   : ${d.paperWidth}mm
+PDF Engine    : ${d.htmlToPdfEngine}`;
+    box.style.whiteSpace = 'pre';
+  } catch {
+    box.textContent = 'Server unreachable — start backend first.';
+    box.style.color = 'var(--red)';
+  }
+}
+
+function onPrinterTypeChange() {
+  const type = document.getElementById('printerType').value;
+  document.getElementById('localOptions').style.display = (type === 'local' || type === 'pdf') ? 'block' : 'none';
+  document.getElementById('ipOptions').style.display    = (type === 'ip')    ? 'block' : 'none';
+}
+
+function savePrinterSettings() {
+  settings.printerType  = document.getElementById('printerType').value;
+  settings.printerName  = document.getElementById('localPrinterName').value;
+  settings.printerIP    = document.getElementById('printerIP').value;
+  settings.printerPort  = document.getElementById('printerPort').value;
+  settings.printCopies  = document.getElementById('printCopies').value;
+  localStorage.setItem('wb_settings', JSON.stringify(settings));
+  showToast('Printer settings saved', 'success');
+}
+
+function saveReceiptSettings() {
+  settings.rcptCompany = document.getElementById('rcptCompany').value;
+  settings.rcptAddr1   = document.getElementById('rcptAddr1').value;
+  settings.rcptAddr2   = document.getElementById('rcptAddr2').value;
+  settings.rcptPhone   = document.getElementById('rcptPhone').value;
+  settings.rcptLogo    = document.getElementById('rcptLogo').value;
+  localStorage.setItem('wb_settings', JSON.stringify(settings));
+  showToast('Receipt settings saved', 'success');
+}
+
+async function doTestPrint() {
+  const input = document.getElementById('testPrintBill').value.trim();
+  const resEl = document.getElementById('testPrintResult');
+  resEl.style.display = 'block';
+  resEl.textContent = 'Looking up bill...';
+  resEl.style.color = 'var(--text2)';
+
+  try {
+    let billId;
+    if (input) {
+      // Try to find by billNo
+      const res = await fetch(`${API}/bills?search=${input}&limit=1`);
+      const data = await res.json();
+      billId = data.bills?.[0]?._id;
+    } else {
+      // Get last bill
+      const res = await fetch(`${API}/bills?limit=1`);
+      const data = await res.json();
+      billId = data.bills?.[0]?._id;
+    }
+
+    if (!billId) {
+      resEl.textContent = 'No bill found.';
+      resEl.style.color = 'var(--red)';
+      return;
+    }
+
+    resEl.textContent = `Printing bill ${billId}...`;
+    await doPrint(billId);
+    resEl.textContent = '✓ Print triggered successfully';
+    resEl.style.color = 'var(--green)';
+  } catch (err) {
+    resEl.textContent = `Error: ${err.message}`;
+    resEl.style.color = 'var(--red)';
+  }
+}
+
+async function previewLastBill() {
+  try {
+    const res = await fetch(`${API}/bills?limit=1`);
+    const data = await res.json();
+    const bill = data.bills?.[0];
+    if (!bill) { showToast('No bills in database', 'error'); return; }
+    await previewBill(bill._id);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function loadPrinterSettingsUI() {
+  if (settings.printerType) {
+    document.getElementById('printerType').value = settings.printerType;
+    onPrinterTypeChange();
+  }
+  if (settings.printerIP)   document.getElementById('printerIP').value   = settings.printerIP;
+  if (settings.printerPort) document.getElementById('printerPort').value = settings.printerPort;
+  if (settings.printCopies) document.getElementById('printCopies').value = settings.printCopies;
+  if (settings.rcptCompany) document.getElementById('rcptCompany').value = settings.rcptCompany;
+  if (settings.rcptAddr1)   document.getElementById('rcptAddr1').value   = settings.rcptAddr1;
+  if (settings.rcptAddr2)   document.getElementById('rcptAddr2').value   = settings.rcptAddr2;
+  if (settings.rcptPhone)   document.getElementById('rcptPhone').value   = settings.rcptPhone;
+  if (settings.rcptLogo)    document.getElementById('rcptLogo').value    = settings.rcptLogo;
+  refreshPrinterStatus();
+  loadLocalPrinters();
+}
+
+// Reopen print modal for existing bill (kept for backwards compat)
+function openPrintModal(b) {
+  doPrint(b._id || b);
+}
+
+
+
+// ============================================================
+// STATS
+// ============================================================
+async function loadStats() {
+  try {
+    const res = await fetch(`${API}/bills/stats/dashboard`);
+    const data = await res.json();
+    document.getElementById('statTotal').textContent = data.totalBills || 0;
+    document.getElementById('statToday').textContent = data.todayBills || 0;
+    document.getElementById('statCompleted').textContent = data.completedToday || 0;
+    document.getElementById('statWeight').textContent = data.totalWeightToday ? (data.totalWeightToday / 1000).toFixed(1) + 'T' : '0T';
+    updateDBStatus(true);
+  } catch (e) {
+    updateDBStatus(false);
+  }
+}
+
+function updateDBStatus(ok) {
+  const el = document.getElementById('dbStatus');
+  el.className = `status-badge ${ok ? 'connected' : 'disconnected'}`;
+  el.innerHTML = `<div class="status-dot"></div><span>DB: ${ok ? 'Online' : 'Offline'}</span>`;
+}
+
+// ============================================================
+// HEALTH
+// ============================================================
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API}/health`);
+    const data = await res.json();
+    document.getElementById('dbHealthInfo').innerHTML = `
+      Status: ${data.status}<br>
+      MongoDB: ${data.mongodb}<br>
+      Serial Port: ${data.serialPort ? 'Connected' : 'Simulation'}<br>
+      Uptime: ${Math.floor(data.uptime)}s
+    `;
+  } catch (err) {
+    document.getElementById('dbHealthInfo').textContent = 'Backend unreachable. Is the server running?';
+  }
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+// ============================================================
+// SETTINGS  — reads from & writes to backend .env via API
+// ============================================================
+
+// Load all settings from backend on tab open
+async function loadSettings() {
+  try {
+    const res  = await fetch(`${API}/settings`);
+    if (!res.ok) throw new Error('Backend unreachable');
+    const data = await res.json();
+    const s    = data.settings || {};
+
+    // Serial
+    if (s.SERIAL_PORT) {
+      document.getElementById('settingPort').value = s.SERIAL_PORT;
+    }
+    if (s.BAUD_RATE) {
+      const sel = document.getElementById('settingBaud');
+      [...sel.options].forEach(o => { if (o.value === s.BAUD_RATE) o.selected = true; });
+    }
+
+    // Cameras
+    if (s.CAMERA1_SNAPSHOT) document.getElementById('settingCam1').value     = s.CAMERA1_SNAPSHOT;
+    if (s.CAMERA2_SNAPSHOT) document.getElementById('settingCam2').value     = s.CAMERA2_SNAPSHOT;
+    if (s.CAMERA1_USER)     document.getElementById('settingCamUser').value  = s.CAMERA1_USER;
+    // password masked — don't fill
+
+    // Company
+    if (s.COMPANY_NAME)  document.getElementById('settingCompany').value  = s.COMPANY_NAME;
+    if (s.COMPANY_ADDR1) document.getElementById('settingAddress').value  = s.COMPANY_ADDR1;
+    if (s.COMPANY_ADDR2) document.getElementById('settingAddress2').value = s.COMPANY_ADDR2;
+    if (s.COMPANY_PHONE) document.getElementById('settingPhone').value    = s.COMPANY_PHONE;
+
+    // MongoDB
+    if (s.MONGODB_URI) document.getElementById('settingMongo').value = s.MONGODB_URI;
+
+  } catch (e) {
+    // Fallback: load from localStorage if backend unavailable
+    const saved = JSON.parse(localStorage.getItem('wb_settings') || '{}');
+    if (saved.cam1)    document.getElementById('settingCam1').value    = saved.cam1;
+    if (saved.cam2)    document.getElementById('settingCam2').value    = saved.cam2;
+    if (saved.company) document.getElementById('settingCompany').value = saved.company;
+    if (saved.address) document.getElementById('settingAddress').value = saved.address;
+    if (saved.phone)   document.getElementById('settingPhone').value   = saved.phone;
+  }
+}
+
+async function saveSerialSettings() {
+  const port = document.getElementById('settingPort').value.trim();
+  const baud = document.getElementById('settingBaud').value;
+  if (!port) { showToast('Enter a port path (e.g. COM3 or /dev/ttyUSB0)', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Connecting...';
+
+  try {
+    const res  = await fetch(`${API}/settings/serial`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ port, baud })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showToast(`✅ ${data.message}`, 'success');
+  } catch (err) {
+    showToast(`Serial save failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Save & Reconnect';
+  }
+}
+
+async function saveCameraSettings() {
+  const btn = event.target;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Saving...';
+
+  try {
+    const res  = await fetch(`${API}/settings/cameras`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        cam1:    document.getElementById('settingCam1').value.trim(),
+        cam2:    document.getElementById('settingCam2').value.trim(),
+        cam1User: document.getElementById('settingCamUser').value.trim(),
+        cam1Pass: document.getElementById('settingCamPass').value
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showToast(`✅ ${data.message}`, 'success');
+  } catch (err) {
+    showToast(`Camera save failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Save Camera Settings';
+  }
+}
+
+async function saveCompanySettings() {
+  const btn = event.target;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Saving...';
+
+  try {
+    const res  = await fetch(`${API}/settings/company`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        name:  document.getElementById('settingCompany').value.trim(),
+        addr1: document.getElementById('settingAddress').value.trim(),
+        addr2: document.getElementById('settingAddress2').value.trim(),
+        phone: document.getElementById('settingPhone').value.trim()
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    showToast(`✅ ${data.message}`, 'success');
+  } catch (err) {
+    showToast(`Company save failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Save';
+  }
+}
+
+// ============================================================
+// MASTER DATA — Materials
+// ============================================================
+let allMaterials = [];  // cached for autocomplete
+let allVehicles  = [];  // cached for autocomplete
+
+async function loadMaterials() {
+  try {
+    const res  = await fetch(`${API}/master/materials`);
+    allMaterials = await res.json();
+    const list = document.getElementById('materialList');
+    const cnt  = document.getElementById('matCount');
+    if (cnt) cnt.textContent = `${allMaterials.length} item${allMaterials.length !== 1 ? 's' : ''}`;
+    if (!list) return;
+    if (!allMaterials.length) {
+      list.innerHTML = '<div class="master-empty">No materials yet. Add one above.</div>';
+      return;
+    }
+    list.innerHTML = allMaterials.map(m => `
+      <div class="master-row">
+        <span class="mr-name">${m.name}</span>
+        <span class="mr-sub">${m.unit || 'Kg'}</span>
+        <button class="mr-edit" onclick="openEditMaterial('${m._id}')">✏ Edit</button>
+        <button class="mr-del"  onclick="deleteMaterial('${m._id}','${m.name}')">✕</button>
+      </div>`).join('');
+  } catch (err) {
+    const list = document.getElementById('materialList');
+    if (list) list.innerHTML = `<div class="master-empty">Error: ${err.message}</div>`;
+  }
+}
+
+async function addMaterial() {
+  const name = document.getElementById('newMatName').value.trim().toUpperCase();
+  const unit = document.getElementById('newMatUnit').value;
+  if (!name) {
+    showToast('Enter a material name', 'error');
+    document.getElementById('newMatName').focus();
+    return;
+  }
+  try {
+    const res  = await fetch(`${API}/master/materials`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, unit })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('newMatName').value = '';
+    showToast(`✓ Material "${name}" added`, 'success');
+    await loadMaterials();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openEditMaterial(id) {
+  const m = allMaterials.find(x => x._id === id);
+  if (!m) return;
+  document.getElementById('editMatId').value   = m._id;
+  document.getElementById('editMatName').value  = m.name;
+  document.getElementById('editMatUnit').value  = m.unit || 'Kg';
+  document.getElementById('matEditModal').classList.add('open');
+  setTimeout(() => document.getElementById('editMatName').focus(), 100);
+}
+
+async function saveMaterialEdit() {
+  const id   = document.getElementById('editMatId').value;
+  const name = document.getElementById('editMatName').value.trim().toUpperCase();
+  const unit = document.getElementById('editMatUnit').value;
+  if (!name) { showToast('Material name is required', 'error'); return; }
+  try {
+    const res  = await fetch(`${API}/master/materials/${id}`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, unit })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeEditModal('matEditModal');
+    showToast(`✓ Material updated to "${name}"`, 'success');
+    await loadMaterials();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteMaterial(id, name) {
+  if (!confirm(`Remove material "${name}"?`)) return;
+  await fetch(`${API}/master/materials/${id}`, { method: 'DELETE' });
+  showToast('Material removed', 'info');
+  loadMaterials();
+}
+
+// ============================================================
+// MASTER DATA — Vehicles
+// ============================================================
+async function loadVehicles() {
+  const search = document.getElementById('vehSearch')?.value || '';
+  try {
+    const res  = await fetch(`${API}/master/vehicles?search=${encodeURIComponent(search)}`);
+    allVehicles = await res.json();
+    const list = document.getElementById('vehicleList');
+    const cnt  = document.getElementById('vehCount');
+    if (cnt) cnt.textContent = `${allVehicles.length} vehicle${allVehicles.length !== 1 ? 's' : ''}`;
+    if (!list) return;
+    if (!allVehicles.length) {
+      list.innerHTML = '<div class="master-empty">No vehicles yet. Add one above.</div>';
+      return;
+    }
+    list.innerHTML = allVehicles.map(v => `
+      <div class="master-row" style="flex-wrap:wrap;gap:4px;">
+        <span class="mr-name" style="font-size:15px;color:var(--accent2);">${v.vehicleNo}</span>
+        <span class="mr-sub">${v.vehicleType || '—'}</span>
+        <span class="mr-sub">👤 ${v.driverName || '—'}</span>
+        <span class="mr-sub">📞 ${v.contactNumber || '—'}</span>
+        ${v.ownerName ? `<span class="mr-sub" style="margin-left:auto;">🏠 ${v.ownerName}</span>` : '<span style="flex:1"></span>'}
+        <button class="mr-edit" onclick="openEditVehicle('${v._id}')">✏ Edit</button>
+        <button class="mr-del"  onclick="deleteVehicle('${v._id}','${v.vehicleNo}')">✕</button>
+      </div>`).join('');
+  } catch (err) {
+    const list = document.getElementById('vehicleList');
+    if (list) list.innerHTML = `<div class="master-empty">Error: ${err.message}</div>`;
+  }
+}
+
+async function addVehicle() {
+  const vehicleNo     = document.getElementById('newVehNo').value.trim().toUpperCase();
+  const driverName    = document.getElementById('newVehDriver').value.trim();
+  const contactNumber = document.getElementById('newVehContact').value.trim();
+  const vehicleType   = document.getElementById('newVehType').value;
+  const ownerName     = document.getElementById('newVehOwner').value.trim();
+  if (!vehicleNo) {
+    showToast('Vehicle No. is required', 'error');
+    document.getElementById('newVehNo').focus();
+    return;
+  }
+  try {
+    const res  = await fetch(`${API}/master/vehicles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleNo, driverName, contactNumber, vehicleType, ownerName })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    ['newVehNo','newVehDriver','newVehContact','newVehOwner'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('newVehType').value = '';
+    showToast(`✓ Vehicle "${vehicleNo}" added`, 'success');
+    await loadVehicles();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openEditVehicle(id) {
+  const v = allVehicles.find(x => x._id === id);
+  if (!v) return;
+  document.getElementById('editVehId').value      = v._id;
+  document.getElementById('editVehNo').value       = v.vehicleNo;
+  document.getElementById('editVehType').value     = v.vehicleType   || '';
+  document.getElementById('editVehDriver').value   = v.driverName    || '';
+  document.getElementById('editVehContact').value  = v.contactNumber || '';
+  document.getElementById('editVehOwner').value    = v.ownerName     || '';
+  document.getElementById('vehEditModal').classList.add('open');
+  setTimeout(() => document.getElementById('editVehNo').focus(), 100);
+}
+
+async function saveVehicleEdit() {
+  const id            = document.getElementById('editVehId').value;
+  const vehicleNo     = document.getElementById('editVehNo').value.trim().toUpperCase();
+  const vehicleType   = document.getElementById('editVehType').value;
+  const driverName    = document.getElementById('editVehDriver').value.trim();
+  const contactNumber = document.getElementById('editVehContact').value.trim();
+  const ownerName     = document.getElementById('editVehOwner').value.trim();
+  if (!vehicleNo) { showToast('Vehicle No. is required', 'error'); return; }
+  try {
+    const res  = await fetch(`${API}/master/vehicles/${id}`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ vehicleNo, vehicleType, driverName, contactNumber, ownerName })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeEditModal('vehEditModal');
+    showToast(`✓ Vehicle "${vehicleNo}" updated`, 'success');
+    await loadVehicles();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteVehicle(id, vehicleNo) {
+  if (!confirm(`Remove vehicle "${vehicleNo}"?`)) return;
+  await fetch(`${API}/master/vehicles/${id}`, { method: 'DELETE' });
+  showToast('Vehicle removed', 'info');
+  loadVehicles();
+}
+
+function closeEditModal(modalId) {
+  document.getElementById(modalId).classList.remove('open');
+}
+
+// Close modal on overlay click
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('master-modal-overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+
+// Close modals and autocomplete dropdowns on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.master-modal-overlay.open').forEach(m => m.classList.remove('open'));
+    closeAC('acMaterialList');
+    closeAC('acVehicleList');
+  }
+});
+
+// Preload master lists for autocomplete use even when not on master tab
+async function preloadMasterData() {
+  try {
+    const [mRes, vRes] = await Promise.all([
+      fetch(`${API}/master/materials`),
+      fetch(`${API}/master/vehicles`)
+    ]);
+    if (mRes.ok) allMaterials = await mRes.json();
+    if (vRes.ok) allVehicles  = await vRes.json();
+  } catch (e) {}
+}
+
+// ============================================================
+// AUTOCOMPLETE
+// ============================================================
+function closeAC(listId) {
+  const el = document.getElementById(listId);
+  if (el) el.classList.remove('open');
+}
+
+function acMaterial(val) {
+  const list = document.getElementById('acMaterialList');
+  if (!list) return;
+  const q = (val || '').toUpperCase().trim();
+  const matches = allMaterials.filter(m =>
+    !q || m.name.includes(q)
+  );
+  if (!matches.length) { list.classList.remove('open'); return; }
+  list.innerHTML = matches.map(m => `
+    <div class="autocomplete-item" onmousedown="selectMaterial('${m.name}')">
+      <span>${highlight(m.name, q)}</span>
+      <span class="ac-sub">${m.unit || 'Kg'}</span>
+    </div>`).join('');
+  list.classList.add('open');
+}
+
+function selectMaterial(name) {
+  const inp = document.getElementById('material');
+  if (inp) { inp.value = name; inp.dispatchEvent(new Event('input')); }
+  closeAC('acMaterialList');
+  checkFormReady();
+}
+
+function acVehicle(val) {
+  const list = document.getElementById('acVehicleList');
+  if (!list) return;
+  const q = (val || '').toUpperCase().trim();
+  const matches = allVehicles.filter(v =>
+    !q || v.vehicleNo.includes(q)
+  );
+  if (!matches.length) { list.classList.remove('open'); return; }
+  list.innerHTML = matches.map(v => `
+    <div class="autocomplete-item" onmousedown="selectVehicle('${v._id}')">
+      <span>${highlight(v.vehicleNo, q)}</span>
+      <span class="ac-sub">${v.driverName || ''} ${v.vehicleType ? '· ' + v.vehicleType : ''}</span>
+    </div>`).join('');
+  list.classList.add('open');
+}
+
+async function selectVehicle(id) {
+  const v = allVehicles.find(x => x._id === id);
+  if (!v) return;
+  const inp = document.getElementById('vehicleNo');
+  if (inp) { inp.value = v.vehicleNo; inp.dispatchEvent(new Event('input')); }
+  closeAC('acVehicleList');
+  updateRemarksFromVehicle(v);
+  checkFormReady();
+}
+
+// Called on every Vehicle No input change — looks up vehicle and fills remarks
+function onVehicleNoChange(val) {
+  acVehicle(val); // show autocomplete dropdown
+  const vNo = (val || '').toUpperCase().trim();
+  const v   = allVehicles.find(x => x.vehicleNo === vNo);
+  if (v) updateRemarksFromVehicle(v);
+}
+
+function updateRemarksFromVehicle(v) {
+  const rem = document.getElementById('remarks');
+  if (!rem) return;
+  const parts = [];
+  if (v.driverName)    parts.push(`Driver: ${v.driverName}`);
+  if (v.contactNumber) parts.push(`Ph: ${v.contactNumber}`);
+  if (v.vehicleType)   parts.push(v.vehicleType);
+  if (v.ownerName)     parts.push(`Owner: ${v.ownerName}`);
+  rem.value = parts.join(' | ');
+}
+
+// Highlights matched text in autocomplete items
+function highlight(text, query) {
+  if (!query) return text;
+  const idx = text.indexOf(query);
+  if (idx === -1) return text;
+  return text.slice(0, idx)
+    + `<span style="color:var(--accent);font-weight:700;">${text.slice(idx, idx + query.length)}</span>`
+    + text.slice(idx + query.length);
+}
+
+// (autocomplete close is handled in the combined keydown listener below)
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tabEl = document.getElementById(`tab-${tab}`);
+  if (tabEl) tabEl.classList.add('active');
+  // Match nav button by onclick attribute containing the tab name exactly
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.getAttribute('onclick') === `switchTab('${tab}')`) t.classList.add('active');
+  });
+  if (tab === 'records') loadRecords();
+  if (tab === 'settings') { loadSettings(); checkHealth(); }
+  if (tab === 'printer') loadPrinterSettingsUI();
+  if (tab === 'master') { loadMaterials(); loadVehicles(); }
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast-msg ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+</script>
+<!-- ── MATERIAL EDIT MODAL ── -->
+<div class="master-modal-overlay" id="matEditModal">
+  <div class="master-modal">
+    <h3>✏ Edit Material</h3>
+    <input type="hidden" id="editMatId" />
+    <div class="field-group">
+      <span class="field-label">Material Name *</span>
+      <input class="field-input" id="editMatName" placeholder="e.g. MSAND" style="text-transform:uppercase;" />
+    </div>
+    <div class="field-group">
+      <span class="field-label">Unit</span>
+      <select class="field-input" id="editMatUnit">
+        <option>Kg</option>
+        <option>Ton</option>
+        <option>Litre</option>
+        <option>Nos</option>
+        <option>Bag</option>
+      </select>
+    </div>
+    <div class="master-modal-actions">
+      <button class="btn btn-success" style="flex:1;margin:0;" onclick="saveMaterialEdit()">💾 Save Changes</button>
+      <button class="btn" style="flex:0 0 auto;margin:0;border-color:var(--border);color:var(--text2);" onclick="closeEditModal('matEditModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VEHICLE EDIT MODAL ── -->
+<div class="master-modal-overlay" id="vehEditModal">
+  <div class="master-modal" style="width:520px;">
+    <h3>✏ Edit Vehicle</h3>
+    <input type="hidden" id="editVehId" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field-group">
+        <span class="field-label">Vehicle No. *</span>
+        <input class="field-input" id="editVehNo" placeholder="TN32AQ2399" style="text-transform:uppercase;" />
+      </div>
+      <div class="field-group">
+        <span class="field-label">Vehicle Type</span>
+        <select class="field-input" id="editVehType">
+          <option value="">— Select —</option>
+          <option>Tipper</option>
+          <option>Lorry</option>
+          <option>Tractor</option>
+          <option>Mini Lorry</option>
+          <option>Container</option>
+          <option>Tanker</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Driver Name</span>
+        <input class="field-input" id="editVehDriver" placeholder="Driver full name" />
+      </div>
+      <div class="field-group">
+        <span class="field-label">Contact Number</span>
+        <input class="field-input" id="editVehContact" placeholder="+91 XXXXX XXXXX" type="tel" />
+      </div>
+      <div class="field-group" style="grid-column:span 2;">
+        <span class="field-label">Owner Name</span>
+        <input class="field-input" id="editVehOwner" placeholder="Vehicle owner name" />
+      </div>
+    </div>
+    <div class="master-modal-actions">
+      <button class="btn btn-success" style="flex:1;margin:0;" onclick="saveVehicleEdit()">💾 Save Changes</button>
+      <button class="btn" style="flex:0 0 auto;margin:0;border-color:var(--border);color:var(--text2);" onclick="closeEditModal('vehEditModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
